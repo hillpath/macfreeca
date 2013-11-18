@@ -7,7 +7,7 @@
 //
 
 #import "MainViewController2.h"
-#define LOGMODE 0
+#define LOGMODE 1
 static void *AVSPPlayerItemStatusContext = &AVSPPlayerItemStatusContext;
 static void *AVSPPlayerRateContext = &AVSPPlayerRateContext;
 static void *AVSPPlayerLayerReadyForDisplay = &AVSPPlayerLayerReadyForDisplay;
@@ -60,34 +60,20 @@ static void *AVSPTimeRanges = &AVSPTimeRanges;
     isFull = NO;
     _playing = 0;
     [m_lbStatus setStringValue:@"Hello"];
-//    dispatch_queue_t playQueue = dispatch_queue_create("com.zombie.macfreeca", NULL);
-//    dispatch_async(playQueue, ^{[player play]});
-//    player = [[AVPlayer alloc] init];
     player = [[AVQueuePlayer alloc] init];
     NSString *test = @"http://m.afreeca.com/main.php";
-    
-    //    [m_webView.mainFrame loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:test]]];
     
     [m_webView setMainFrameURL:test];
     [m_webView setUIDelegate:self];
     [m_webView setFrameLoadDelegate:self];
     
-//	[[[self m_movieView] layer] setBackgroundColor:CGColorGetConstantColor(kCGColorBlack)];
-    
-	// Create the AVPlayer, add rate and status observers
-//	[self setPlayer:[[[AVPlayer alloc] init] autorelease]];
-
-    
     [m_movieView setWantsLayer:YES];
     
-//    NSLog(@"show layer");
     // Create an AVPlayerLayer and add it to the player view if there is video, but hide it until it's ready for display
     playerLayer = [AVPlayerLayer playerLayerWithPlayer:player];
     [playerLayer setFrame:[[m_movieView layer] bounds]];
     [playerLayer setAutoresizingMask:kCALayerWidthSizable | kCALayerHeightSizable];
     [playerLayer setHidden:NO];
-//    [playerLayer setBackgroundColor:[[NSColor blackColor] CGColor]];
-    
     
     [[m_movieView layer] addSublayer:playerLayer];
     [self setPlayerLayer:playerLayer];
@@ -130,23 +116,18 @@ static void *AVSPTimeRanges = &AVSPTimeRanges;
 }
 - (void)webView:(WebView *)sender runJavaScriptAlertPanelWithMessage:(NSString *)message initiatedByFrame:(WebFrame *)frame
 {
-    //    NSURL *fileUrl = [NSURL URLWithString:@"http://123.111.232.12/bts/data/44952413.m3u8"];
     fileUrl = [NSURL URLWithString:[m_strUrl stringByAppendingString:m_strAdd]];
     // afreeca url
 //    NSLog(@"%@", fileUrl);
  
-    // movie play
     
 	// Create an asset with our URL, asychronously load its tracks, its duration, and whether it's playable or protected.
 	// When that loading is complete, configure a player to play the asset.
-//    [self close];
-    
     [self loadAVPlayerWithURL:fileUrl];
 }
 - (void)loadAVPlayerWithURL:(NSURL*)url {
     AVURLAsset *asset = [AVURLAsset URLAssetWithURL:fileUrl options:nil];
     //    AVURLAsset *asset = [AVURLAsset URLAssetWithURL:fileUrl options:[NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES] forKey:AVURLAssetPreferPreciseDurationAndTimingKey]];
-    //	NSArray *assetKeysToLoadAndTest = [NSArray arrayWithObjects:@"playable", @"hasProtectedContent", @"tracks", @"duration", nil];
 	NSArray *assetKeysToLoadAndTest = [NSArray arrayWithObjects:@"playable", @"tracks", nil];
     
 	[asset loadValuesAsynchronouslyForKeys:assetKeysToLoadAndTest completionHandler:^(void) {
@@ -219,27 +200,12 @@ static void *AVSPTimeRanges = &AVSPTimeRanges;
         [self addObserver:self forKeyPath:@"player.currentItem.playbackBufferFull" options:0 context:nil];
     }
 	[self addObserver:self forKeyPath:@"player.currentItem.status" options:NSKeyValueObservingOptionNew context:AVSPPlayerItemStatusContext];
-
-	// First test whether the values of each of the keys we need have been successfully loaded.
-//	for (NSString *key in keys)
-//	{
-//		NSError *error = nil;
-//		
-//		if ([asset statusOfValueForKey:key error:&error] == AVKeyValueStatusFailed)
-//		{
-//			[self stopLoadingAnimationAndHandleError:error];
-//			return;
-//		}
-//	}
-//	
 	if (![asset isPlayable] || [asset hasProtectedContent])
 	{
         if (LOGMODE) {
             NSLog(@"unplayable asset");
         }
-		// We can't play this asset. Show the "Unplayable Asset" label.
 		[self stopLoadingAnimationAndHandleError:nil];
-//		[[self unplayableLabel] setHidden:NO];
 		return;
 	}
 	
@@ -258,35 +224,11 @@ static void *AVSPTimeRanges = &AVSPTimeRanges;
 ////		[[self noVideoLabel] setHidden:NO];
 //	}
     
-//    [player release];
-//    [playerItem release];
 	// Create a new AVPlayerItem and make it our player's current item.
 	AVPlayerItem *playerItem = [AVPlayerItem playerItemWithAsset:asset];
-//    fileUrl = [NSURL URLWithString:[m_strUrl stringByAppendingString:m_strAdd]];
-    
-//    AVPlayerItem *itemOne = [AVPlayerItem playerItemWithAsset:asset];
-//    AVPlayerItem *itemTwo = [AVPlayerItem playerItemWithAsset:asset];
-//    NSArray *items = [NSArray arrayWithObjects:itemOne, itemTwo, nil];
-//
-//    player = [AVQueuePlayer queuePlayerWithItems:items];
-//    [player addObserver:self forKeyPath:@"status" options:0 context:nil];
-//    player.actionAtItemEnd = AVPlayerActionAtItemEndAdvance;
-//    [[NSNotificationCenter defaultCenter] addObserver:self
-//                                             selector:@selector(playerItemDidReachEnd:)
-//                                                 name:AVPlayerItemDidPlayToEndTimeNotification
-//                                               object:[player currentItem]];
 
     [player replaceCurrentItemWithPlayerItem:playerItem];
-//    [player insertItem:playerItem afterItem:nil];
-//    player = [[AVQueuePlayer alloc] initWithPlayerItem:playerItem];
-//    [player insertItem:playerItem afterItem:nil];
-//    [self setPlayer:[AVPlayer playerWithPlayerItem:playerItem]];
-//	[[self player] replaceCurrentItemWithPlayerItem:playerItem];
 	
-	
-//    if ([[self player] rate] != 1.f)
-//	{
-//    [[self player] setRate:1.0];
     [m_lbStatus2 setStringValue:@"play"];
     isStreaming = YES;
 
@@ -311,17 +253,9 @@ static void *AVSPTimeRanges = &AVSPTimeRanges;
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
+    // timeranges가 버퍼링에 따라 늘어남
     if (AVSPTimeRanges == context) {
         NSArray *timeRanges = (NSArray *)[change objectForKey:NSKeyValueChangeNewKey];
-        if (timeRanges && [timeRanges count]) {
-            CMTimeRange timerange = [[timeRanges objectAtIndex:0] CMTimeRangeValue];
-//            NSLog(@" . . . %.5f -> %.5f", CMTimeGetSeconds(timerange.start), CMTimeGetSeconds(CMTimeAdd(timerange.start, timerange.duration)));
-            if (LOGMODE) {
-                NSLog(@"%f", [self currentTime]);
-            }
-        }
-        
-//        NSArray *timeRanges = (NSArray *)[change objectForKey:NSKeyValueChangeNewKey];
         if (timeRanges && [timeRanges count]) {
             CMTimeRange timerange = [[timeRanges objectAtIndex:0] CMTimeRangeValue];
             if (LOGMODE) {
@@ -357,6 +291,7 @@ static void *AVSPTimeRanges = &AVSPTimeRanges;
         }
         [player insertItem:[AVPlayerItem playerItemWithURL:fileUrl] afterItem:nil];
 //        if (isStreaming) {
+//          //두번째 스트리밍일때
 //            NSLog(@"is streaming");
 //        }
     }
@@ -364,17 +299,11 @@ static void *AVSPTimeRanges = &AVSPTimeRanges;
         if ([keyPath isEqual: @"player.currentItem.playbackBufferEmpty"])
         {
             NSLog(@"buffer empty");
-            //        NSLog(@"%@", [(AVURLAsset*)player.currentItem.asset URL]);
-            //        [player.currentItem seekToTime:kCMTimeZero];
             //        [player replaceCurrentItemWithPlayerItem:[AVPlayerItem playerItemWithURL:fileUrl]];
-            //        [player pause];
-            //        [player play];
             //        [player advanceToNextItem];
             //        [player insertItem:[AVPlayerItem playerItemWithURL:fileUrl] afterItem:player.currentItem];
         } else if (context == AVSPPlayerLayerLikelyToKeepUp) {
             NSLog(@"likely to keep up");
-            //        [player play];
-            //        [player insertItem:[AVPlayerItem playerItemWithURL:fileUrl] afterItem:player.currentItem];
         }
     }
     
@@ -395,20 +324,18 @@ static void *AVSPTimeRanges = &AVSPTimeRanges;
                     break;
                 case AVPlayerItemStatusReadyToPlay:
                     [m_lbStatus2 setStringValue:@"버퍼링...기다려주세요"];
-//                    NSLog(@"tracks: %@", [player.currentItem tracks]);
                     if (LOGMODE) {
                         NSLog(@"ready to play");
                     }
-//                    [player insertItem:[AVPlayerItem playerItemWithURL:fileUrl] afterItem:player.currentItem];
                     isStreaming = YES;
                     [player play];
                     break;
                 case AVPlayerItemStatusFailed:
                     [m_lbStatus2 setStringValue:@"실패혹은방종"];
+                    // 버퍼끝날때도 잠간 뜨는문제가있음
                     if (LOGMODE) {
                         NSLog(@"failed:%@", [[[[self player] currentItem] error] description]);
                     }
-//                    [player pause];
                     [self close];
                     break;
             }
@@ -417,7 +344,6 @@ static void *AVSPTimeRanges = &AVSPTimeRanges;
                 NSLog(@"%@", change);
             }
 //            NSLog(@"%@", [(AVURLAsset*)player.currentItem.asset URL]);
-//            [player seekToTime:kCMTimeZero];
 //            [self close];
 //            AVPlayerItem *playerItem = [AVPlayerItem playerItemWithURL:fileUrl];
 //            [[self player] replaceCurrentItemWithPlayerItem:playerItem];
@@ -432,16 +358,13 @@ static void *AVSPTimeRanges = &AVSPTimeRanges;
             if (LOGMODE) {
                 NSLog(@"paused");
             }
-//			[[self playPauseButton] setTitle:@"Play"];
-//            [player play];
+            // 버퍼링 끝나면 알아서 플레이됨
 		}
 		else
 		{
             if (LOGMODE) {
                 NSLog(@"playing");
             }
-//            [player insertItem:[AVPlayerItem playerItemWithURL:fileUrl] afterItem:player.currentItem];
-//			[[self playPauseButton] setTitle:@"Pause"];
 		}
 	}
 	else if (context == AVSPPlayerLayerReadyForDisplay)
@@ -449,7 +372,6 @@ static void *AVSPTimeRanges = &AVSPTimeRanges;
         if (LOGMODE) {
             NSLog(@"case3");
         }
-//        [player replaceCurrentItemWithPlayerItem:playerItem];
 		if ([[change objectForKey:NSKeyValueChangeNewKey] boolValue] == YES)
 		{
 			// The AVPlayerLayer is ready for display. Hide the loading spinner and show it.
@@ -457,7 +379,6 @@ static void *AVSPTimeRanges = &AVSPTimeRanges;
 			[[self playerLayer] setHidden:NO];
 		}
 //        [player play];
-        
 //        [player insertItem:[AVPlayerItem playerItemWithURL:fileUrl] afterItem:player.currentItem];
 	}
 	else
@@ -472,7 +393,6 @@ static void *AVSPTimeRanges = &AVSPTimeRanges;
 	[player pause];
     [self removeAllObservers];
     [m_lbStatus2 setStringValue:@"실패 혹은 방종"];
-//	[self setTimeObserverToken:nil];
 }
 - (void)removeAllObservers {
 //	[[self player] removeTimeObserver:[self timeObserverToken]];
@@ -483,6 +403,7 @@ static void *AVSPTimeRanges = &AVSPTimeRanges;
     }
 	[self removeObserver:self forKeyPath:@"player.currentItem.status"];
     [player release];
+//	[self setTimeObserverToken:nil];
 //    [self removeObserver:self forKeyPath:@"playerLayer.readyForDisplpay"];
 //    [self removeObserver:self forKeyPath:@"playerLayer.readyToPlay"];
 //	if ([self playerLayer])
@@ -540,6 +461,7 @@ static void *AVSPTimeRanges = &AVSPTimeRanges;
 
 - (IBAction)playPauseToggle:(id)sender
 {
+    // 재생/정지버튼 안만듬
 	if ([[self player] rate] != 1.f)
 	{
 		if ([self currentTime] == [self duration])
@@ -551,20 +473,6 @@ static void *AVSPTimeRanges = &AVSPTimeRanges;
 		[[self player] pause];
 	}
 }
-
-//- (NSData *)dataOfType:(NSString *)typeName error:(NSError **)outError
-//{
-//	if (outError != NULL)
-//		*outError = [NSError errorWithDomain:NSOSStatusErrorDomain code:unimpErr userInfo:NULL];
-//	return nil;
-//}
-//
-//- (BOOL)readFromData:(NSData *)data ofType:(NSString *)typeName error:(NSError **)outError
-//{
-//	if (outError != NULL)
-//		*outError = [NSError errorWithDomain:NSOSStatusErrorDomain code:unimpErr userInfo:NULL];
-//	return YES;
-//}
 
 - (IBAction)goHome:(id)sender {
 //    [self close];
