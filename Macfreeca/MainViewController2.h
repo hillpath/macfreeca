@@ -53,4 +53,14 @@
 - (IBAction)setVolume:(id)sender;
 - (IBAction)toggleFull:(id)sender;
 
+- (void)setUpPlaybackOfAsset:(AVAsset *)asset withKeys:(NSArray *)keys;
+- (void)stopLoadingAnimationAndHandleError:(NSError *)error;
+
+@end
+
+@interface MainViewController2(WebView)
+@end
+
+@interface MainViewController2(videoPlay)
+- (void)close;
 @end

@@ -7,7 +7,9 @@
 //
 
 #import "MainViewController2.h"
-#define LOGMODE 1
+// log 찍을려면 1
+#define LOGMODE 0
+
 static void *AVSPPlayerItemStatusContext = &AVSPPlayerItemStatusContext;
 static void *AVSPPlayerRateContext = &AVSPPlayerRateContext;
 static void *AVSPPlayerLayerReadyForDisplay = &AVSPPlayerLayerReadyForDisplay;
@@ -15,20 +17,12 @@ static void *AVSPPlayerLayerReadyToPlay = &AVSPPlayerLayerReadyToPlay;
 static void *AVSPPlayerLayerLikelyToKeepUp = &AVSPPlayerLayerLikelyToKeepUp;
 static void *AVSPTimeRanges = &AVSPTimeRanges;
 
-@interface MainViewController2 ()
-
-- (void)setUpPlaybackOfAsset:(AVAsset *)asset withKeys:(NSArray *)keys;
-- (void)stopLoadingAnimationAndHandleError:(NSError *)error;
-
-@end
-
 @implementation MainViewController2
 
 
 @synthesize player;
 @synthesize playerLayer;
 //@synthesize playerItem;
-
 @synthesize m_movieView, m_lbStatus, m_webView, m_lbStatus2, m_sliderVolumn, twoFingersTouches;
 @synthesize movieReader;
 
@@ -83,18 +77,8 @@ static void *AVSPTimeRanges = &AVSPTimeRanges;
 //    [self addObserver:self forKeyPath:@"playerLayer.readyToPlay" options:NSKeyValueObservingOptionInitial | NSKeyValueObservingOptionNew context:AVSPPlayerLayerReadyToPlay];
     
 }
-- (void)playerItemDidReachEnd:(NSNotification *)notification {
-    //allow for state updates, UI changes
-    if (LOGMODE) {
-        NSLog(@"reach end");
-    }
-    [player seekToTime:kCMTimeZero];
-    [player play];
-    if (LOGMODE) {
-        NSLog(@"%@", [(AVURLAsset*)player.currentItem.asset URL]);
-        NSLog(@"%@", [[player currentItem] description]);
-    }
-}
+
+#pragma mark - Web
 - (void)webView:(WebView *)sender didStartProvisionalLoadForFrame:(WebFrame *)frame
 {
     [m_lbStatus setStringValue:@"로딩"];
@@ -105,22 +89,27 @@ static void *AVSPTimeRanges = &AVSPTimeRanges;
     [m_lbStatus setStringValue:@"완료"];
 }
 
-- (void)webView:(WebView *)sender didClearWindowObject:(WebScriptObject *)windowObject forFrame:(WebFrame *)frame
+- (void)webView:(WebView *)sender mouseDidMoveOverElement:(NSDictionary *)elementInformation modifierFlags:(NSUInteger)modifierFlags
 {
-//    NSLog(@"javascript");
+    //    NSLog(@"%@", [elementInformation objectForKey:@"WebElementLinkURL"]);
+    NSString *i_addString = [[elementInformation objectForKey:@"WebElementLinkURL"] absoluteString];
+    //    NSLog(@"%@", i_addString);
+    if ([i_addString hasPrefix:@"javascript:afPlay("]) {
+        i_addString = [i_addString stringByReplacingOccurrencesOfString:@"javascript:afPlay(" withString:@""];
+        i_addString = [[i_addString componentsSeparatedByString:@","] objectAtIndex:0];
+        i_addString = [i_addString stringByReplacingOccurrencesOfString:@")" withString:@""];
+        i_addString = [i_addString stringByAppendingString:@".m3u8?fr=w"];
+        //        ?fr=w 뒤에 붙는 조건문, 그냥 없어도 됨
+        m_strAdd = [[NSString alloc] initWithString:i_addString];
+    }
 }
 
-- (void)webView:(WebView *)sender didCommitLoadForFrame:(WebFrame *)frame
-{
-//    NSLog(@"java2");
-}
 - (void)webView:(WebView *)sender runJavaScriptAlertPanelWithMessage:(NSString *)message initiatedByFrame:(WebFrame *)frame
 {
     fileUrl = [NSURL URLWithString:[m_strUrl stringByAppendingString:m_strAdd]];
     // afreeca url
 //    NSLog(@"%@", fileUrl);
  
-    
 	// Create an asset with our URL, asychronously load its tracks, its duration, and whether it's playable or protected.
 	// When that loading is complete, configure a player to play the asset.
     [self loadAVPlayerWithURL:fileUrl];
@@ -164,24 +153,7 @@ static void *AVSPTimeRanges = &AVSPTimeRanges;
 		
 	}];
 }
-- (void)movieStatusStringPostedNotification:(NSNotification*)notification {
-    NSLog(@"notification: %@", notification);
-}
-- (void)webView:(WebView *)sender mouseDidMoveOverElement:(NSDictionary *)elementInformation modifierFlags:(NSUInteger)modifierFlags
-{
-    //    NSLog(@"%@", [elementInformation objectForKey:@"WebElementLinkURL"]);
-    NSString *i_addString = [[elementInformation objectForKey:@"WebElementLinkURL"] absoluteString];
-    //    NSLog(@"%@", i_addString);
-    if ([i_addString hasPrefix:@"javascript:afPlay("]) {
-        i_addString = [i_addString stringByReplacingOccurrencesOfString:@"javascript:afPlay(" withString:@""];
-        i_addString = [[i_addString componentsSeparatedByString:@","] objectAtIndex:0];
-        i_addString = [i_addString stringByReplacingOccurrencesOfString:@")" withString:@""];
-        i_addString = [i_addString stringByAppendingString:@".m3u8?fr=w"];
-        //        ?fr=w 뒤에 붙는 조건문, 그냥 없어도 됨
-        m_strAdd = [[NSString alloc] initWithString:i_addString];
-    }
-}
-
+#pragma mark - player
 #pragma mark -
 
 // 옵션 다 필요없고 스트리밍 들어오면 바로 플레이
@@ -411,10 +383,11 @@ static void *AVSPTimeRanges = &AVSPTimeRanges;
 //	[super close];
     
 }
-+ (NSSet *)keyPathsForValuesAffectingDuration
-{
-	return [NSSet setWithObjects:@"player.currentItem", @"player.currentItem.status", nil];
-}
+
+//+ (NSSet *)keyPathsForValuesAffectingDuration
+//{
+//	return [NSSet setWithObjects:@"player.currentItem", @"player.currentItem.status", nil];
+//}
 
 //- (double)duration
 //{
@@ -441,6 +414,21 @@ static void *AVSPTimeRanges = &AVSPTimeRanges;
 	return [NSSet setWithObject:@"player.volume"];
 }
 
+- (void)playerItemDidReachEnd:(NSNotification *)notification {
+    //allow for state updates, UI changes
+    if (LOGMODE) {
+        NSLog(@"reach end");
+    }
+    [player seekToTime:kCMTimeZero];
+    [player play];
+    if (LOGMODE) {
+        NSLog(@"%@", [(AVURLAsset*)player.currentItem.asset URL]);
+        NSLog(@"%@", [[player currentItem] description]);
+    }
+}
+- (void)movieStatusStringPostedNotification:(NSNotification*)notification {
+    NSLog(@"notification: %@", notification);
+}
 
 - (IBAction)setVolume:(id)sender {
     NSSlider *slider = sender;
@@ -448,7 +436,7 @@ static void *AVSPTimeRanges = &AVSPTimeRanges;
 }
 
 - (IBAction)toggleFull:(id)sender {
-
+    
     if (isFull) {
         [m_webView setFrame:NSRectFromCGRect(CGRectMake(m_webView.frame.origin.x, m_webView.frame.origin.y, 355, m_webView.frame.size.height))];
         [m_movieView setFrame:NSMakeRect(363, 0, self.view.frame.size.width - 363, self.view.frame.size.height-34)];
@@ -475,8 +463,7 @@ static void *AVSPTimeRanges = &AVSPTimeRanges;
 }
 
 - (IBAction)goHome:(id)sender {
-//    [self close];
+    //    [self close];
     [m_webView setMainFrameURL:@"http://m.afreeca.com/main.php"];
 }
-
 @end
